@@ -37,6 +37,10 @@ cdef inline uint32_t _lookup3_rot(uint32_t value, unsigned int shift) noexcept n
     return (value << shift) ^ (value >> (32 - shift))
 
 
+# This is a Cython translation of HDF5's H5_checksum_lookup3(). HDF5 credits
+# Bob Jenkins and permits unrestricted use of the algorithm. See
+# licenses/hdf5.txt and the HDF5 1.14.6 source:
+# https://github.com/HDFGroup/hdf5/blob/7bf340440909d468dbb3cf41f0ea0d87f5050cea/src/H5checksum.c#L339-L465
 cdef uint32_t _lookup3_checksum(
     const uint8_t *data, size_t length, uint32_t initval
 ) noexcept nogil:
@@ -581,11 +585,11 @@ cdef class FileID(GroupID):
 
         H5Fget_file_image(self.id, image_buf, size)
 
+        ### {{if HDF5_VERSION < (2, 0, 0)}}
         # HDF5 < 2.0 clears the file-open status flags in the returned image
         # without updating the superblock checksum. This makes images using
         # superblock v2 or v3 impossible to reopen. HDF5 2.0 fixed this in
         # HDFGroup/hdf5#5489; mirror that repair for older supported versions.
-        ### {{if HDF5_VERSION < (2, 0, 0)}}
         _repair_file_image_checksum(image_buf, size)
         ### {{endif}}
 
